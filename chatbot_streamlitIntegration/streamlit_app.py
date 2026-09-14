@@ -35,16 +35,28 @@ st.markdown(
 
     :root { --ink: #17211d; --muted: #6d7772; --paper: #f5f4ef; --line: #d9ddd6; --accent: #e76f51; --green: #31594f; }
     .stApp { background: var(--paper); color: var(--ink); }
-    .block-container { max-width: 1120px; padding: 3rem 3rem 7rem; }
+    .block-container { max-width: 1120px; padding: 1.5rem 3rem 7rem; }
     h1, h2, h3, p, div, textarea, button { font-family: 'Manrope', sans-serif; }
     h1 { letter-spacing: 0; font-size: 2.8rem; line-height: 1.05; color: var(--ink); }
     .eyebrow { color: var(--accent); font: 500 .75rem 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; }
     .subtitle { color: var(--muted); font-size: 1rem; margin-top: -.8rem; }
     .status { border: 1px solid var(--line); background: #fbfaf6; padding: .75rem 1rem; border-radius: 8px; color: var(--green); font: 500 .78rem 'DM Mono', monospace; }
     .status.offline { color: #a34c3b; }
-    .stChatMessage { border: 0; padding: 1rem 0; }
-    [data-testid='stChatMessage'] { color: var(--ink) !important; }
-    [data-testid='stChatMessageContent'] { color: var(--ink) !important; border-bottom: 1px solid var(--line); padding-bottom: 1.1rem; }
+    .stChatMessage { border: 0 !important; padding: 1rem 0 !important; background: transparent !important; }
+    [data-testid='stChatMessage'] { color: var(--ink) !important; background: transparent !important; }
+    [data-testid='stChatMessage'][aria-label='user'] { background: #214e87 !important; border: 1px solid #183d6b !important; border-radius: 18px !important; padding: 1rem 1.25rem !important; margin: .75rem 0 .75rem 8% !important; }
+    [data-testid='stChatMessage'][aria-label='user'] [data-testid='stChatMessageContent'] { background: transparent !important; border: 0 !important; padding: 0 0 0 .35rem !important; }
+    [data-testid='stChatMessage'][aria-label='user'] [data-testid='stChatMessageContent'] * { color: #ffffff !important; }
+    [data-testid='stChatMessage'][aria-label='user'] [data-testid='stChatMessageContent'] code { color: #ffffff !important; background: #315f98 !important; }
+    [data-testid='stChatMessage'][aria-label='assistant'] { background: transparent !important; }
+    [data-testid='stChatMessage'][aria-label='assistant'] [data-testid='stChatMessageContent'] { background: #fffefa !important; border-bottom: 1px solid var(--line); padding: 1rem 0 1.1rem !important; }
+    div[data-testid='stChatMessage']:has(.speaker-you) { display: flex !important; flex-direction: row-reverse !important; width: fit-content !important; max-width: 78% !important; background: #214e87 !important; border: 1px solid #183d6b !important; border-radius: 18px !important; padding: 1rem 1.25rem !important; margin: .75rem 0 .75rem auto !important; }
+    div[data-testid='stChatMessage']:has(.speaker-you) [data-testid='stChatMessageContent'] { background: transparent !important; border: 0 !important; padding: 0 0 0 .35rem !important; }
+    div[data-testid='stChatMessage']:has(.speaker-you) [data-testid='stChatMessageContent'] * { color: #ffffff !important; }
+    div[data-testid='stChatMessage']:has(.speaker-you) [data-testid='stChatMessageContent'] { overflow-wrap: anywhere; }
+    div[data-testid='stChatMessage']:has(.speaker-model) { display: flex !important; flex-direction: row !important; background: transparent !important; margin-right: 20% !important; }
+    div[data-testid='stChatMessage']:has(.speaker-model) [data-testid='stChatMessageContent'] { background: #fffefa !important; }
+    [data-testid='stChatMessageContent'] { color: var(--ink) !important; }
     [data-testid='stChatMessageContent'] * { color: var(--ink) !important; }
     [data-testid='stChatMessageContent'] code { color: #26483f !important; background: #e7ebe3 !important; }
     [data-testid='stChatMessageContent'] a { color: #b84f39 !important; }
@@ -55,6 +67,11 @@ st.markdown(
     .stChatInputContainer textarea::placeholder, [data-testid='stChatInput'] textarea::placeholder { color: #66736c !important; opacity: 1; }
     .stMarkdown, .stMarkdown p, .stMarkdown li { color: var(--ink); }
     .response-meta { color: var(--muted); font: 500 .72rem 'DM Mono', monospace; margin-top: .75rem; }
+    .message-date { color: var(--muted); font: 500 .68rem 'DM Mono', monospace; margin-top: .55rem; }
+    .speaker-marker { display: none !important; }
+    [data-testid='stChatMessage'] [data-testid='stMarkdownContainer']:has(.speaker-marker) { height: 0 !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; line-height: 0 !important; }
+    [data-testid='stStatusWidget'] { border: 1px solid var(--line); border-radius: 8px; background: #fbfaf6; color: var(--green); }
+    [data-testid='stStatusWidget'] p, [data-testid='stStatusWidget'] li { color: var(--green) !important; }
     .stButton button { border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: #fbfaf6; }
     .stButton button:hover { border-color: var(--accent); color: var(--accent); }
     section[data-testid='stSidebar'] { background: #e7ebe3; border-right: 1px solid var(--line); }
@@ -127,8 +144,15 @@ with header_right:
         st.markdown("<div class='status'>● local model ready</div>", unsafe_allow_html=True)
 
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
+    role = message["role"]
+    avatar = "user" if role == "user" else "assistant"
+    with st.chat_message(role, avatar=avatar):
+        marker_class = "speaker-you" if role == "user" else "speaker-model"
+        st.markdown(f"<span class='speaker-marker {marker_class}'></span>", unsafe_allow_html=True)
         st.markdown(message["content"])
+        if role == "assistant" and message.get("time"):
+            message_date = datetime.fromisoformat(message["time"]).strftime("%d %B %Y %H:%M:%S")
+            st.markdown(f"<div class='message-date'>{message_date}</div>", unsafe_allow_html=True)
         if message["role"] == "assistant" and "response_seconds" in message:
             st.markdown(
                 f"<div class='response-meta'>answered in {message['response_seconds']:.2f} seconds</div>",
@@ -139,7 +163,8 @@ user_input = st.chat_input("Ask your local model anything...")
 if user_input:
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     st.session_state.messages.append({"role": "user", "content": user_input, "time": timestamp})
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar="user"):
+        st.markdown("<span class='speaker-marker speaker-you'></span>", unsafe_allow_html=True)
         st.markdown(user_input)
 
     model_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
@@ -148,12 +173,21 @@ if user_input:
         for message in st.session_state.messages
     )
     try:
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar="assistant"):
+            st.markdown("<span class='speaker-marker speaker-model'></span>", unsafe_allow_html=True)
             started_at = time.perf_counter()
-            with st.spinner("Thinking..."):
+            with st.status("Preparing your answer...", expanded=True) as activity:
+                activity.write("Reading your question and conversation context")
+                activity.update(label="Generating a response...", state="running")
                 answer = local_answer(model_messages)
             response_seconds = time.perf_counter() - started_at
+            activity.write(f"Finished in {response_seconds:.2f} seconds")
+            activity.update(label="Answer ready", state="complete", expanded=False)
             st.markdown(answer)
+            st.markdown(
+                f"<div class='message-date'>{datetime.fromisoformat(timestamp).strftime('%d %B %Y %H:%M:%S')}</div>",
+                unsafe_allow_html=True,
+            )
             st.markdown(
                 f"<div class='response-meta'>answered in {response_seconds:.2f} seconds</div>",
                 unsafe_allow_html=True,
